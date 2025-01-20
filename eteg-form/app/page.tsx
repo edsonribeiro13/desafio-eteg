@@ -6,7 +6,6 @@ import * as yup from 'yup';
 import styles from './page.module.css';
 import { isValidCPF } from './validateCpf';
 
-// Validation Schema
 interface FormData {
   nomeCompleto: string;
   cpf: string;
@@ -29,46 +28,54 @@ const formSchema = yup.object().shape({
 
 const FormPage: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
   const {
     register,
     handleSubmit,
     formState: { errors },
+    reset
   } = useForm<FormData>({
     resolver: yupResolver(formSchema),
   });
 
-  const onSubmit = (data: FormData) => {
-    setIsSubmitting(true)
-    
-    const successMessage = document.createElement('div');
-    successMessage.textContent = 'Formulário enviado com sucesso!';
-    successMessage.style.position = 'fixed';
-    successMessage.style.top = '20px';
-    successMessage.style.left = '50%';
-    successMessage.style.transform = 'translateX(-50%)';
-    successMessage.style.backgroundColor = '#d4edda';
-    successMessage.style.color = '#155724';
-    successMessage.style.padding = '10px 20px';
-    successMessage.style.border = '1px solid #c3e6cb';
-    successMessage.style.borderRadius = '5px';
-    successMessage.style.boxShadow = '0 2px 4px rgba(0, 0, 0, 0.1)';
-    successMessage.style.fontSize = '16px';
-    successMessage.style.zIndex = '1000';
+  const onSubmit = async (data: FormData) => {
+    setIsSubmitting(true);
+    setErrorMessage(null);
+    setSuccessMessage(null);
 
-    document.body.appendChild(successMessage);
+    try {
+      const response = await fetch('/api/database', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      });
 
-    setIsSubmitting(false)
+      const result = await response.json();
 
-    setTimeout(() => {
-      document.body.removeChild(successMessage);
-    }, 3000);
+      if (result.success) {
+        setSuccessMessage(result.message);
+        reset();
+      } else {
+        setErrorMessage(result.message);
+      }
+    } catch (error) {
+      setErrorMessage(`Ocorreu um erro ao enviar o formulário. Tente novamente mais tarde. ${
+        (error as {message: string}).message
+      }`);
+    }
 
-    console.log('Submitted Data:', data);
+    setIsSubmitting(false);
   };
 
   return (
     <div className={styles.container}>
       <h1>Formulário</h1>
+      {successMessage && <div className={styles.successMessage}>{successMessage}</div>}
+      {errorMessage && <div className={styles.errorMessage}>{errorMessage}</div>}
       <form onSubmit={handleSubmit(onSubmit)} className={styles.form}>
         <div className={styles.field}>
           <label htmlFor="nomeCompleto">Nome Completo</label>
@@ -119,7 +126,11 @@ const FormPage: React.FC = () => {
           {errors.observacao && <p className={styles.error}>{errors.observacao.message}</p>}
         </div>
 
-        <button type="submit" className={styles.button} disabled={isSubmitting}>
+        <button 
+          type="submit" 
+          className={styles.button} 
+          disabled={isSubmitting}
+        >
           {isSubmitting ? 'Enviando...' : 'Enviar'}
         </button>
       </form>
