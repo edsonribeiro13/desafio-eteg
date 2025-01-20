@@ -73,7 +73,7 @@ const FormPage: React.FC = () => {
 
   return (
     <div className={styles.container}>
-      <h1>Formulário</h1>
+      <h1>Formulário de cadastro Eteg</h1>
       {successMessage && <div className={styles.successMessage}>{successMessage}</div>}
       {errorMessage && <div className={styles.errorMessage}>{errorMessage}</div>}
       <form onSubmit={handleSubmit(onSubmit)} className={styles.form}>
